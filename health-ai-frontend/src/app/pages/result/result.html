@@ -1,0 +1,249 @@
+
+<!-- Main Report -->
+<div id="health-report" class="report-wrapper visible">
+
+  <!-- Header -->
+  <header class="report-header">
+    <div class="header-bg"></div>
+    <div class="header-content">
+      <div class="header-top">
+        <div class="brand">
+          <span class="brand-icon">⚕️</span>
+          <span class="brand-name">HealthAI</span>
+          <span class="brand-tag">Clinical Assessment</span>
+        </div>
+        <button class="download-btn" (click)="downloadPDF()">
+          <span class="btn-icon">↓</span>
+          <span>Download Report</span>
+        </button>
+      </div>
+      <div class="header-meta">
+        <h1 class="report-title">Personal Health Assessment Report</h1>
+        <p class="report-date">{{ reportDate }}</p>
+      </div>
+    </div>
+  </header>
+
+  <!-- Score Overview Section -->
+  <section class="score-section fade-in delay-1">
+    <div class="score-card">
+      <div class="score-dial-wrapper">
+        <svg viewBox="0 0 200 200" class="score-svg">
+          <!-- Background track -->
+          <path [attr.d]="getBackgroundArcPath()" fill="none" stroke="#1e293b" stroke-width="14" stroke-linecap="round"/>
+          <!-- Score arc -->
+          <path [attr.d]="getScoreArcPath()" fill="none" [attr.stroke]="getScoreColor()"
+                stroke-width="14" stroke-linecap="round" class="score-arc"/>
+          <!-- Center text -->
+          <text x="100" y="95" text-anchor="middle" class="score-number" [attr.fill]="getScoreColor()">
+            {{ animatedScore }}
+          </text>
+          <text x="100" y="115" text-anchor="middle" class="score-unit" fill="#64748b">/100</text>
+        </svg>
+        <div class="score-label" [style.color]="getScoreColor()">{{ getScoreLabel() }}</div>
+      </div>
+
+      <div class="score-summary">
+        <div class="severity-badge" [ngClass]="'badge-' + overallSeverity.toLowerCase()">
+          <span class="badge-dot"></span>
+          {{ overallSeverity }} SEVERITY
+        </div>
+        <h2 class="summary-title">Health Overview</h2>
+        <p class="summary-text">{{ overallConclusion }}</p>
+
+        <div class="stats-row">
+          <div class="stat-item">
+            <span class="stat-value text-warning">{{ getDetectedCount() }}</span>
+            <span class="stat-label">Issues Detected</span>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat-item">
+            <span class="stat-value text-success">{{ 4 - getDetectedCount() }}</span>
+            <span class="stat-label">Clear Markers</span>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat-item">
+            <span class="stat-value text-info">{{ result?.questionnaire_score || 0 }}</span>
+            <span class="stat-label">Survey Score</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Vital Metrics Section -->
+  <section class="metrics-section fade-in delay-2">
+    <h2 class="section-title">
+      <span class="section-icon">📊</span>
+      Vital Metrics
+    </h2>
+    <div class="metrics-grid">
+      <div class="metric-card" *ngFor="let metric of healthMetrics; let i = index"
+           [ngClass]="'metric-' + metric.status" [style.animation-delay]="(i * 0.1) + 's'">
+        <div class="metric-header">
+          <span class="metric-label">{{ metric.label }}</span>
+          <span class="metric-status-dot" [ngClass]="'dot-' + metric.status"></span>
+        </div>
+        <div class="metric-value">
+          <span class="metric-number">{{ metric.value }}</span>
+          <span class="metric-unit">{{ metric.unit }}</span>
+        </div>
+        <div class="metric-bar-track">
+          <div class="metric-bar-fill" [ngClass]="'fill-' + metric.status"
+               [style.width.%]="getMetricBarWidth(metric)"></div>
+        </div>
+        <div class="metric-range">Normal: {{ metric.normalRange }}</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Observations Chart Section -->
+  <section class="chart-section fade-in delay-3">
+    <h2 class="section-title">
+      <span class="section-icon">🔬</span>
+      Observation Analysis
+    </h2>
+
+    <div class="chart-container">
+      <!-- Horizontal bar chart for observations -->
+      <div class="obs-chart">
+        <div class="obs-chart-row" *ngFor="let obs of observations; let i = index"
+             [style.animation-delay]="(i * 0.15) + 's'">
+          <div class="obs-label-col">
+            <span class="obs-icon">{{ obs.icon }}</span>
+            <span class="obs-name">{{ obs.label }}</span>
+          </div>
+          <div class="obs-bar-col">
+            <div class="obs-bar-track">
+              <div class="obs-bar-fill"
+                   [ngClass]="obs.detected ? 'fill-detected-' + obs.severity.toLowerCase() : 'fill-clear'"
+                   [style.width]="obs.detected ? (obs.severity === 'HIGH' ? '85%' : obs.severity === 'MEDIUM' ? '60%' : '35%') : '12%'">
+              </div>
+            </div>
+            <span class="obs-status" [ngClass]="obs.detected ? 'status-detected' : 'status-clear'">
+              {{ obs.detected ? obs.severity : 'CLEAR' }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Radar-style indicator grid -->
+      <div class="indicator-grid">
+        <div class="indicator-item" *ngFor="let obs of observations"
+             [ngClass]="obs.detected ? 'indicator-alert' : 'indicator-ok'">
+          <span class="indicator-icon">{{ obs.icon }}</span>
+          <span class="indicator-label">{{ obs.label }}</span>
+          <span class="indicator-check">{{ obs.detected ? '⚠️' : '✓' }}</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Detailed Observations Cards -->
+  <section class="observations-section fade-in delay-4">
+    <h2 class="section-title">
+      <span class="section-icon">🩺</span>
+      Detailed Health Insights
+    </h2>
+
+    <div class="observations-list">
+      <div class="obs-card" *ngFor="let obs of observations; let i = index"
+           [ngClass]="{ 'obs-detected': obs.detected, 'obs-clear': !obs.detected }"
+           [style.animation-delay]="(i * 0.12) + 's'">
+
+        <div class="obs-card-header">
+          <div class="obs-card-title">
+            <span class="obs-card-icon">{{ obs.icon }}</span>
+            <h3>{{ obs.label }}</h3>
+          </div>
+          <div class="obs-severity-tag" [ngClass]="getSeverityClass(obs.severity)">
+            {{ obs.detected ? obs.severity : 'CLEAR' }}
+          </div>
+        </div>
+
+        <div class="obs-card-body">
+          <p class="obs-description">{{ obs.description }}</p>
+
+          <div class="obs-insight" *ngIf="obs.detected">
+            <span class="insight-label">Clinical Insight</span>
+            <p>{{ obs.insight }}</p>
+          </div>
+
+          <!-- OTC Recommendations -->
+          <div class="otc-section" *ngIf="obs.detected">
+            <h4 class="otc-title">
+              <span>💊</span> OTC Recommendations
+            </h4>
+            <div class="otc-list">
+              <div class="otc-item" *ngFor="let rec of obs.otcRecommendations"
+                   [ngClass]="'otc-' + rec.type">
+                <div class="otc-item-header">
+                  <span class="otc-type-badge" [ngClass]="'badge-type-' + rec.type">
+                    {{ rec.type === 'supplement' ? '🌿' : rec.type === 'medication' ? '💊' : '🏃' }}
+                    {{ rec.type | titlecase }}
+                  </span>
+                  <span class="otc-name">{{ rec.name }}</span>
+                </div>
+                <p class="otc-dosage" *ngIf="rec.dosage"><strong>Dosage:</strong> {{ rec.dosage }}</p>
+                <p class="otc-note">{{ rec.note }}</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="all-clear-message" *ngIf="!obs.detected">
+            <span class="check-icon">✓</span>
+            No issues detected. This marker is within the healthy range.
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- General Recommendations -->
+  <section class="general-recs fade-in delay-5">
+    <h2 class="section-title">
+      <span class="section-icon">💡</span>
+      General Wellness Recommendations
+    </h2>
+    <div class="recs-grid">
+      <div class="rec-card">
+        <span class="rec-icon">💧</span>
+        <h4>Hydration</h4>
+        <p>Drink 2.5–3 litres of water daily. Add electrolytes if you exercise or sweat heavily.</p>
+      </div>
+      <div class="rec-card">
+        <span class="rec-icon">🖥️</span>
+        <h4>Screen Time</h4>
+        <p>Limit recreational screen time to &lt;2 hrs/day. Enable Night Shift after sunset.</p>
+      </div>
+      <div class="rec-card">
+        <span class="rec-icon">🏃</span>
+        <h4>Physical Activity</h4>
+        <p>Aim for 150 min/week moderate aerobic exercise. Even 30-min daily walks improve all markers.</p>
+      </div>
+      <div class="rec-card">
+        <span class="rec-icon">🥗</span>
+        <h4>Nutrition</h4>
+        <p>Prioritize whole foods, reduce processed sugar, and ensure adequate protein (0.8–1g/kg bodyweight).</p>
+      </div>
+      <div class="rec-card">
+        <span class="rec-icon">🧘</span>
+        <h4>Stress Management</h4>
+        <p>Practice 10 min daily mindfulness, box breathing, or progressive muscle relaxation.</p>
+      </div>
+      <div class="rec-card doctor-card" *ngIf="overallSeverity === 'HIGH'">
+        <span class="rec-icon">👨‍⚕️</span>
+        <h4>Consult a Doctor</h4>
+        <p>Your health score indicates you should seek professional medical advice within 48–72 hours.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer Disclaimer -->
+  <footer class="report-footer">
+    <div class="footer-icon">⚕️</div>
+    <p><strong>Medical Disclaimer:</strong> This report is generated by an AI-based health assessment tool for informational purposes only. It does not constitute medical advice, diagnosis, or treatment. Always consult a qualified healthcare professional before making any health decisions or starting any OTC medication regimen.</p>
+    <p class="footer-brand">Generated by HealthAI System · {{ reportDate }}</p>
+  </footer>
+
+</div>

@@ -1,0 +1,56 @@
+<div class="min-h-screen bg-[#040d1a] text-white flex flex-col items-center p-6">
+
+  <!-- Header -->
+  <div class="w-full max-w-3xl text-center mb-8">
+    <h1 class="text-3xl font-bold text-cyan-400">🧠 Health Assessment</h1>
+    <p class="text-gray-400 mt-2">Answer a few questions to complete your analysis</p>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="text-center mt-20">
+    <div class="loader"></div>
+    <p class="text-gray-400 mt-4">Generating questions...</p>
+  </div>
+
+  <!-- Questions -->
+  <div *ngIf="!loading" class="w-full max-w-3xl space-y-6">
+
+    <div *ngFor="let q of questions; let i = index"
+         class="bg-gray-900 border border-gray-700 rounded-xl p-5 shadow-md hover:border-cyan-400 transition">
+
+      <!-- Question -->
+      <h2 class="text-lg font-semibold mb-4">
+        Q{{ i + 1 }}. {{ q.question }}
+      </h2>
+
+      <!-- Options -->
+      <div class="space-y-2">
+        <label *ngFor="let opt of q.options; let j = index"
+               class="flex items-center gap-3 p-2 rounded-lg cursor-pointer hover:bg-gray-800 transition">
+
+          <input
+            type="radio"
+            [name]="'q' + i"
+            [value]="j"
+            [(ngModel)]="answers[i]"
+            class="accent-cyan-400"
+          />
+
+          <span class="text-gray-300">{{ opt }}</span>
+
+        </label>
+      </div>
+
+    </div>
+
+    <!-- Submit Button -->
+    <button
+      (click)="submit()"
+      class="w-full mt-6 bg-cyan-500 hover:bg-cyan-600 text-black font-semibold py-3 rounded-xl shadow-lg transition duration-300"
+    >
+      Submit & Generate Report 🚀
+    </button>
+
+  </div>
+
+</div>

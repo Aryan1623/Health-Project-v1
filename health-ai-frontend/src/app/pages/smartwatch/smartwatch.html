@@ -1,0 +1,42 @@
+<div class="min-h-screen bg-gray-900 text-white flex flex-col items-center justify-center p-6">
+
+  <h1 class="text-3xl font-bold mb-6">Smartwatch Setup</h1>
+
+  <!-- 🔥 ADD THIS BUTTON -->
+  <button
+    (click)="connectDevice()"
+    class="bg-blue-600 px-6 py-2 rounded mb-4"
+  >
+    Connect Smartwatch
+  </button>
+
+  <p *ngIf="loading">Connecting...</p>
+  <p *ngIf="deviceName">Connected: {{ deviceName }}</p>
+
+  <!-- Fallback Form -->
+  <div *ngIf="connectionFailed" class="mt-6 bg-gray-800 p-4 rounded-xl w-full max-w-md">
+
+    <h2 class="text-xl mb-4">Enter Data Manually</h2>
+
+    <input [(ngModel)]="manualData.heart_rate" placeholder="Heart Rate"
+      class="w-full mb-2 p-2 text-black rounded" />
+
+    <input [(ngModel)]="manualData.spo2" placeholder="SpO2"
+      class="w-full mb-2 p-2 text-black rounded" />
+
+    <input [(ngModel)]="manualData.stress_level" placeholder="Stress (low/high)"
+      class="w-full mb-2 p-2 text-black rounded" />
+
+    <input [(ngModel)]="manualData.sleep_hours" placeholder="Sleep Hours"
+      class="w-full mb-4 p-2 text-black rounded" />
+
+    <button
+      (click)="submitManual()"
+      class="bg-green-600 px-4 py-2 rounded w-full"
+    >
+      Submit
+    </button>
+
+  </div>
+
+</div>

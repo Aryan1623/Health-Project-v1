@@ -1,0 +1,146 @@
+<div class="face-scan-root">
+
+  <!-- Header -->
+  <div class="scan-header fade-in">
+    <span class="scan-eyebrow">Health AI System</span>
+    <h1 class="scan-title">Face Scan</h1>
+    <p class="scan-subtitle">Hold still while we analyze your facial indicators</p>
+  </div>
+
+  <!-- Camera viewport -->
+  <div class="scan-viewport-wrapper fade-in" [class.face-detected]="captureStartTime !== null">
+
+    <!-- Animated border pulse ring -->
+    <div class="pulse-ring"></div>
+
+    <!-- Animated scan line (runs while scanning) -->
+    <div class="scan-line" *ngIf="!result"></div>
+
+    <!-- Video feed -->
+    <video #video autoplay playsinline class="scan-video"></video>
+
+    <!-- Canvas overlay -->
+    <canvas #canvas class="scan-canvas"></canvas>
+
+    <!-- Top-left status badge -->
+    <div class="scan-badge scan-badge--left" *ngIf="!result">
+      <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+      <span>Analyzing…</span>
+    </div>
+    <div class="scan-badge scan-badge--left scan-badge--done" *ngIf="result">
+      <span class="dot dot--green"></span>
+      <span>Captured</span>
+    </div>
+
+    <!-- Countdown badge -->
+    <div class="scan-badge scan-badge--right" *ngIf="!result && captureStartTime">
+      {{ countdown }}s
+    </div>
+
+    <!-- Region label strip at bottom -->
+    <div class="scan-region-strip" *ngIf="!result">
+      Fever Zone · Lips · Eyes · Cheeks · Nose
+    </div>
+
+    <!-- Camera status row -->
+    <div class="scan-status-row">
+      <span class="scan-status-item">
+        <span class="status-dot status-dot--blue"></span>
+        Landmarks active
+      </span>
+      <span class="scan-status-item">
+        <span class="status-dot" [class.status-dot--green]="captureStartTime" [class.status-dot--red]="!captureStartTime"></span>
+        {{ captureStartTime ? 'Face detected' : 'No face' }}
+      </span>
+    </div>
+  </div>
+
+  <!-- Live indicator cards -->
+  <div class="indicators-grid fade-in" *ngIf="!result">
+
+    <div class="indicator-card">
+      <div class="indicator-header">
+        <span class="indicator-label" style="color: var(--ind-fever)">Fever risk</span>
+        <span class="indicator-value" style="color: var(--ind-fever)">{{ liveIndicators.feverRisk }}%</span>
+      </div>
+      <div class="indicator-track">
+        <div class="indicator-bar" [style.width.%]="liveIndicators.feverRisk" style="background: var(--ind-fever)"></div>
+      </div>
+      <p class="indicator-source">Forehead · Cheeks</p>
+    </div>
+
+    <div class="indicator-card">
+      <div class="indicator-header">
+        <span class="indicator-label" style="color: var(--ind-fatigue)">Fatigue risk</span>
+        <span class="indicator-value" style="color: var(--ind-fatigue)">{{ liveIndicators.fatigueRisk }}%</span>
+      </div>
+      <div class="indicator-track">
+        <div class="indicator-bar" [style.width.%]="liveIndicators.fatigueRisk" style="background: var(--ind-fatigue)"></div>
+      </div>
+      <p class="indicator-source">Dark circles · Eyelids</p>
+    </div>
+
+    <div class="indicator-card">
+      <div class="indicator-header">
+        <span class="indicator-label" style="color: var(--ind-dehydration)">Dehydration</span>
+        <span class="indicator-value" style="color: var(--ind-dehydration)">{{ liveIndicators.dehydrationRisk }}%</span>
+      </div>
+      <div class="indicator-track">
+        <div class="indicator-bar" [style.width.%]="liveIndicators.dehydrationRisk" style="background: var(--ind-dehydration)"></div>
+      </div>
+      <p class="indicator-source">Lip paleness</p>
+    </div>
+
+    <div class="indicator-card">
+      <div class="indicator-header">
+        <span class="indicator-label" style="color: var(--ind-nausea)">Nausea risk</span>
+        <span class="indicator-value" style="color: var(--ind-nausea)">{{ liveIndicators.nauseaRisk }}%</span>
+      </div>
+      <div class="indicator-track">
+        <div class="indicator-bar" [style.width.%]="liveIndicators.nauseaRisk" style="background: var(--ind-nausea)"></div>
+      </div>
+      <p class="indicator-source">Cheek pallor</p>
+    </div>
+
+  </div>
+
+  <!-- Scan progress bar -->
+  <div class="scan-progress-card fade-in" *ngIf="!result">
+    <p class="progress-label">Scan progress</p>
+    <div class="progress-track">
+      <div class="progress-fill" [style.width.%]="scanProgress"></div>
+    </div>
+    <div class="progress-footer">
+      <span>Capturing regions…</span>
+      <span class="progress-pct">{{ scanProgress }}%</span>
+    </div>
+  </div>
+
+  <!-- Result section -->
+  <div class="result-card fade-in" *ngIf="result">
+    <div class="result-flags">
+      <span class="result-flag" [class.result-flag--active]="result.feverSuspected">
+        Fever {{ result.feverSuspected ? '⚠' : '✓' }}
+      </span>
+      <span class="result-flag" [class.result-flag--active]="result.weaknessSuspected">
+        Weakness {{ result.weaknessSuspected ? '⚠' : '✓' }}
+      </span>
+      <span class="result-flag" [class.result-flag--active]="result.dehydrationSuspected">
+        Dehydration {{ result.dehydrationSuspected ? '⚠' : '✓' }}
+      </span>
+      <span class="result-flag" [class.result-flag--active]="result.nauseaSuspected">
+        Nausea {{ result.nauseaSuspected ? '⚠' : '✓' }}
+      </span>
+    </div>
+    <details class="result-raw">
+      <summary>View raw data</summary>
+      <pre>{{ result | json }}</pre>
+    </details>
+  </div>
+
+  <!-- Footer hint -->
+  <p class="scan-footer-hint" *ngIf="!result">
+    Results auto-advance to Eye Scan when capture completes
+  </p>
+
+</div>

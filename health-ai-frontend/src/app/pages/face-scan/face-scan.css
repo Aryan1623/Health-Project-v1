@@ -1,0 +1,264 @@
+/* ── Tokens ──────────────────────────────────────────── */
+:host {
+  --bg-root:    #0f172a;
+  --bg-surface: #1e293b;
+  --bg-deep:    #0f172a;
+  --border:     rgba(30, 58, 95, 0.8);
+  --accent:     #22d3ee;
+  --text-1:     #f1f5f9;
+  --text-2:     #94a3b8;
+  --text-3:     #475569;
+
+  --ind-fever:       #f87171;
+  --ind-fatigue:     #fb923c;
+  --ind-dehydration: #a78bfa;
+  --ind-nausea:      #34d399;
+}
+
+/* ── Layout ──────────────────────────────────────────── */
+.face-scan-root {
+  background: var(--bg-root);
+  min-height: 100vh;
+  padding: 2rem 1rem 3rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  color: var(--text-1);
+  font-family: system-ui, sans-serif;
+}
+
+/* ── Header ──────────────────────────────────────────── */
+.scan-header { text-align: center; }
+.scan-eyebrow {
+  display: block;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+  font-weight: 500;
+  margin-bottom: 6px;
+}
+.scan-title  { font-size: 26px; font-weight: 500; margin: 0 0 4px; }
+.scan-subtitle { font-size: 14px; color: var(--text-2); margin: 0; }
+
+/* ── Viewport ────────────────────────────────────────── */
+.scan-viewport-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 580px;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1.5px solid var(--border);
+  background: var(--bg-surface);
+  transition: border-color 0.4s ease;
+}
+.scan-viewport-wrapper.face-detected {
+  border-color: rgba(34, 211, 238, 0.45);
+}
+
+.scan-video  { width: 100%; height: auto; display: block; }
+.scan-canvas {
+  position: absolute; top: 0; left: 0;
+  width: 100%; height: 100%;
+}
+
+/* ── Pulse ring ──────────────────────────────────────── */
+.pulse-ring {
+  position: absolute; inset: -3px;
+  border-radius: 14px;
+  border: 1.5px solid var(--accent);
+  animation: pulse-ring 2s ease-out infinite;
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* ── Scan line ───────────────────────────────────────── */
+.scan-line {
+  position: absolute; left: 0; width: 100%; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  animation: scan-line 2.6s linear infinite;
+  pointer-events: none;
+  z-index: 9;
+}
+
+/* ── Badges ──────────────────────────────────────────── */
+.scan-badge {
+  position: absolute; top: 10px;
+  background: rgba(15, 23, 42, 0.82);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 5px 10px;
+  font-size: 12px;
+  color: #7dd3fc;
+  display: flex; align-items: center; gap: 4px;
+  z-index: 10;
+}
+.scan-badge--left  { left: 10px; }
+.scan-badge--right { right: 10px; color: var(--accent); font-weight: 500; font-size: 13px; animation: shimmer 1.6s ease infinite; }
+.scan-badge--done  { color: #34d399; }
+
+/* ── Dots ────────────────────────────────────────────── */
+.dot {
+  display: inline-block;
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.dot--green { background: #34d399; }
+.dot:nth-child(1) { animation: dot-bounce 1.2s ease infinite 0s; }
+.dot:nth-child(2) { animation: dot-bounce 1.2s ease infinite 0.18s; }
+.dot:nth-child(3) { animation: dot-bounce 1.2s ease infinite 0.36s; }
+
+/* ── Region strip ────────────────────────────────────── */
+.scan-region-strip {
+  position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
+  background: rgba(15, 23, 42, 0.82);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 4px 14px;
+  font-size: 11px;
+  color: var(--text-2);
+  white-space: nowrap;
+  z-index: 10;
+}
+
+/* ── Camera status row ───────────────────────────────── */
+.scan-status-row {
+  display: flex; justify-content: space-between;
+  padding: 8px 12px;
+  background: rgba(15, 23, 42, 0.6);
+  border-top: 1px solid var(--border);
+  z-index: 10; position: relative;
+}
+.scan-status-item {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 12px; color: #7dd3fc;
+}
+.status-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+}
+.status-dot--blue  { background: var(--accent); }
+.status-dot--green { background: #34d399; }
+.status-dot--red   { background: #f87171; }
+
+/* ── Indicator grid ──────────────────────────────────── */
+.indicators-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  width: 100%; max-width: 580px;
+}
+.indicator-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+}
+.indicator-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 8px;
+}
+.indicator-label { font-size: 12px; font-weight: 500; }
+.indicator-value { font-size: 13px; font-weight: 500; }
+.indicator-track {
+  background: var(--bg-deep);
+  border-radius: 4px; height: 6px; overflow: hidden;
+}
+.indicator-bar {
+  height: 100%; border-radius: 4px;
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  min-width: 4px;
+}
+.indicator-source {
+  font-size: 11px; color: var(--text-3); margin: 6px 0 0;
+}
+
+/* ── Progress card ───────────────────────────────────── */
+.scan-progress-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px;
+  width: 100%; max-width: 580px;
+}
+.progress-label {
+  font-size: 11px; color: var(--text-3); font-weight: 500;
+  text-transform: uppercase; letter-spacing: 0.08em;
+  margin: 0 0 8px;
+}
+.progress-track {
+  background: var(--bg-deep);
+  border-radius: 6px; height: 8px; overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 6px;
+  background: linear-gradient(90deg, #1d4ed8, var(--accent));
+  transition: width 0.4s ease;
+}
+.progress-footer {
+  display: flex; justify-content: space-between;
+  margin-top: 6px; font-size: 11px; color: var(--text-3);
+}
+.progress-pct { color: var(--accent); }
+
+/* ── Result card ─────────────────────────────────────── */
+.result-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  width: 100%; max-width: 580px;
+}
+.result-flags {
+  display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;
+}
+.result-flag {
+  font-size: 12px; font-weight: 500;
+  padding: 4px 12px; border-radius: 20px;
+  background: rgba(52, 211, 153, 0.12);
+  color: #34d399;
+  border: 1px solid rgba(52, 211, 153, 0.25);
+}
+.result-flag--active {
+  background: rgba(248, 113, 113, 0.12);
+  color: #f87171;
+  border-color: rgba(248, 113, 113, 0.25);
+}
+.result-raw { font-size: 12px; color: var(--text-2); }
+.result-raw summary { cursor: pointer; margin-bottom: 8px; }
+.result-raw pre {
+  background: var(--bg-deep); border-radius: 8px;
+  padding: 12px; font-size: 11px; overflow-x: auto;
+  color: var(--text-2); border: 1px solid var(--border);
+}
+
+/* ── Footer hint ─────────────────────────────────────── */
+.scan-footer-hint {
+  font-size: 12px; color: var(--text-3); text-align: center;
+  margin: 0;
+}
+
+/* ── Animations ──────────────────────────────────────── */
+@keyframes pulse-ring {
+  0%   { transform: scale(1); opacity: 0.6; }
+  100% { transform: scale(1.04); opacity: 0; }
+}
+@keyframes scan-line {
+  0%   { top: 0%; opacity: 0.8; }
+  50%  { opacity: 1; }
+  100% { top: 100%; opacity: 0.8; }
+}
+@keyframes dot-bounce {
+  0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
+  40%           { transform: translateY(-4px); opacity: 1; }
+}
+@keyframes shimmer {
+  0%, 100% { opacity: 0.5; }
+  50%       { opacity: 1; }
+}
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-in { animation: fade-in 0.45s ease both; }
