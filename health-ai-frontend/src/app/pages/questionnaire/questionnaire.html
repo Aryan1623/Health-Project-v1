@@ -1,56 +1,216 @@
-<div class="min-h-screen bg-[#040d1a] text-white flex flex-col items-center p-6">
+<!-- ═══════════════════════════════════════════════════════
+     HEALTH AI — QUESTIONNAIRE COMPONENT
+     ═══════════════════════════════════════════════════════ -->
 
-  <!-- Header -->
-  <div class="w-full max-w-3xl text-center mb-8">
-    <h1 class="text-3xl font-bold text-cyan-400">🧠 Health Assessment</h1>
-    <p class="text-gray-400 mt-2">Answer a few questions to complete your analysis</p>
+<!-- ── LOADING PHASE ── -->
+<div class="phase-screen phase-loading" *ngIf="showLoader && phase === 'loading'">
+  <div class="scanner-wrap">
+    <div class="scanner-ring r1"></div>
+    <div class="scanner-ring r2"></div>
+    <div class="scanner-ring r3"></div>
+    <div class="scanner-core">
+      <span class="scanner-icon">🧠</span>
+    </div>
+  </div>
+  <h2 class="loading-title">AI is analysing your scans</h2>
+  <p class="loading-sub">Generating personalised questions…</p>
+  <div class="loading-bar"><div class="loading-bar-fill"></div></div>
+</div>
+
+<!-- ── SCORING PHASE ── -->
+<div class="phase-screen phase-loading" *ngIf="phase === 'scoring'">
+  <div class="scanner-wrap">
+    <div class="scanner-ring r1"></div>
+    <div class="scanner-ring r2"></div>
+    <div class="scanner-core"><span class="scanner-icon">📊</span></div>
+  </div>
+  <h2 class="loading-title">Scoring your responses</h2>
+  <p class="loading-sub">Running the health model…</p>
+  <div class="loading-bar"><div class="loading-bar-fill"></div></div>
+</div>
+
+<!-- ── INTRO PHASE ── -->
+<div class="phase-screen phase-intro" *ngIf="phase === 'intro'">
+  <div class="intro-card">
+    <div class="intro-badge">
+      <span>🤖</span>
+      <span>AI-Powered · {{ modelName }}</span>
+    </div>
+    <h1 class="intro-title">Your <em>Personalised</em><br>Health Survey</h1>
+    <p class="intro-body">
+      Based on your biometric scan results, our ML model has selected
+      <strong>{{ questions.length }} targeted questions</strong> most relevant
+      to your health profile. Each answer refines your final health score.
+    </p>
+
+    <!-- Observation pills -->
+    <div class="obs-pills" *ngIf="questions.length > 0">
+      <div class="obs-pill" *ngFor="let cat of ['cardiovascular','sleep','ocular','fatigue','lifestyle','respiratory']">
+        <ng-container *ngIf="getQuestionsForCategory(cat) as catQs">
+          <span *ngIf="catQs.length > 0">
+            {{ categoryMeta[cat].icon }} {{ categoryMeta[cat].label }}
+            <em>{{ catQs.length }}q</em>
+          </span>
+        </ng-container>
+      </div>
+    </div>
+
+    <!-- Category preview chips (simpler) -->
+    <div class="category-chips">
+      <ng-container *ngFor="let q of questions | slice:0:4">
+        <span class="chip" [style.--chip-color]="categoryMeta[q.category]?.color">
+          {{ categoryMeta[q.category]?.icon }} {{ categoryMeta[q.category]?.label }}
+        </span>
+      </ng-container> 
+      <span class="chip chip-more" *ngIf="questions.length > 4">
+        +{{ questions.length - 4 }} more
+      </span>
+    </div>
+
+    <div class="intro-meta">
+      <span class="meta-item">⏱ ~{{ questions.length * 12 }}s to complete</span>
+      <span class="meta-sep">·</span>
+      <span class="meta-item">{{ questions.length }} questions</span>
+    </div>
+
+    <button class="start-btn" (click)="startQuiz()">
+      <span>Begin Assessment</span>
+      <span class="btn-arrow">→</span>
+    </button>
+
+    <p class="error-msg" *ngIf="errorMsg">⚠️ {{ errorMsg }}</p>
+  </div>
+</div>
+
+<!-- ── QUESTIONS PHASE ── -->
+<div class="phase-questions" *ngIf="phase === 'questions'">
+
+  <!-- Top bar -->
+  <div class="q-topbar">
+    <div class="q-brand">
+      <span>⚕️</span>
+      <span>HealthAI</span>
+    </div>
+    <div class="q-progress-wrap">
+      <div class="q-progress-track">
+        <div class="q-progress-fill" [style.width.%]="progress"></div>
+      </div>
+      <span class="q-progress-label">{{ current + 1 }} / {{ questions.length }}</span>
+    </div>
   </div>
 
-  <!-- Loading -->
-  <div *ngIf="loading" class="text-center mt-20">
-    <div class="loader"></div>
-    <p class="text-gray-400 mt-4">Generating questions...</p>
-  </div>
+  <!-- Question card -->
+  <div class="q-stage">
+    <div class="q-card" *ngIf="currentQuestion">
 
-  <!-- Questions -->
-  <div *ngIf="!loading" class="w-full max-w-3xl space-y-6">
+      <!-- Category header -->
+      <div class="q-category-bar" [style.--cat-color]="categoryInfo.color">
+        <span class="q-cat-icon">{{ categoryInfo.icon }}</span>
+        <span class="q-cat-label">{{ categoryInfo.label }}</span>
+        <span class="q-cat-number">Q{{ current + 1 }}</span>
+      </div>
 
-    <div *ngFor="let q of questions; let i = index"
-         class="bg-gray-900 border border-gray-700 rounded-xl p-5 shadow-md hover:border-cyan-400 transition">
-
-      <!-- Question -->
-      <h2 class="text-lg font-semibold mb-4">
-        Q{{ i + 1 }}. {{ q.question }}
-      </h2>
+      <!-- Question text -->
+      <div class="q-text-wrap">
+        <h2 class="q-text">{{ currentQuestion.text }}</h2>
+      </div>
 
       <!-- Options -->
-      <div class="space-y-2">
-        <label *ngFor="let opt of q.options; let j = index"
-               class="flex items-center gap-3 p-2 rounded-lg cursor-pointer hover:bg-gray-800 transition">
+      <div class="q-options">
+        <button
+          class="q-option"
+          *ngFor="let opt of currentQuestion.options; let i = index"
+          [class.selected]="isSelected(i)"
+          [ngClass]="isSelected(i) ? getOptionSeverity(i, currentQuestion.options.length) : ''"
+          (click)="selectOption(i)">
+          <span class="option-letter">{{ 'ABCD'[i] }}</span>
+          <span class="option-text">{{ opt }}</span>
+          <span class="option-check" *ngIf="isSelected(i)">✓</span>
+        </button>
+      </div>
 
-          <input
-            type="radio"
-            [name]="'q' + i"
-            [value]="j"
-            [(ngModel)]="answers[i]"
-            class="accent-cyan-400"
-          />
+      <!-- Navigation -->
+      <div class="q-nav">
+        <button class="nav-btn nav-prev" (click)="prev()" [disabled]="current === 0">
+          ← Back
+        </button>
 
-          <span class="text-gray-300">{{ opt }}</span>
+        <div class="q-dots">
+          <span class="q-dot"
+                *ngFor="let q of questions; let i = index"
+                [class.dot-done]="answers[q.id] !== undefined"
+                [class.dot-current]="i === current">
+          </span>
+        </div>
 
-        </label>
+        <button class="nav-btn nav-next"
+                [class.nav-next-active]="isAnswered"
+                [disabled]="!isAnswered"
+                (click)="next()">
+          {{ current === questions.length - 1 ? 'Submit' : 'Next' }} →
+        </button>
       </div>
 
     </div>
+  </div>
 
-    <!-- Submit Button -->
-    <button
-      (click)="submit()"
-      class="w-full mt-6 bg-cyan-500 hover:bg-cyan-600 text-black font-semibold py-3 rounded-xl shadow-lg transition duration-300"
-    >
-      Submit & Generate Report 🚀
+</div>
+
+<!-- ── DONE PHASE ── -->
+<div class="phase-screen phase-done" *ngIf="phase === 'done' && scoreResult">
+  <div class="done-card">
+
+    <!-- Score ring -->
+    <div class="done-score-wrap">
+      <svg viewBox="0 0 120 120" class="done-svg">
+        <circle cx="60" cy="60" r="50" fill="none" stroke="#1e293b" stroke-width="10"/>
+        <circle cx="60" cy="60" r="50" fill="none"
+                [attr.stroke]="getSeverityColor()"
+                stroke-width="10"
+                stroke-linecap="round"
+                stroke-dasharray="314"
+                [attr.stroke-dashoffset]="314 - (scoreResult.score / 100) * 314"
+                transform="rotate(-90 60 60)"
+                class="done-arc"/>
+        <text x="60" y="55" text-anchor="middle" class="done-score-num"
+              [attr.fill]="getSeverityColor()">{{ scoreResult.score }}</text>
+        <text x="60" y="70" text-anchor="middle" class="done-score-label" fill="#64748b">/100</text>
+      </svg>
+      <div class="done-severity" [style.color]="getSeverityColor()">
+        {{ getSeverityLabel() }}
+      </div>
+    </div>
+
+    <h2 class="done-title">Assessment Complete</h2>
+    <p class="done-body">
+      You answered <strong>{{ answeredCount }}</strong> AI-selected questions.
+      Your health score reflects the weighted clinical analysis of your responses.
+    </p>
+
+    <!-- Breakdown bars -->
+    <div class="breakdown-section" *ngIf="getBreakdownKeys().length > 0">
+      <h3 class="breakdown-title">Score Breakdown</h3>
+      <div class="breakdown-list">
+        <div class="breakdown-row" *ngFor="let cat of getBreakdownKeys()">
+          <span class="breakdown-cat">
+            {{ categoryMeta[cat]?.icon ?? '🔹' }}
+            {{ categoryMeta[cat]?.label ?? cat }}
+          </span>
+          <div class="breakdown-bar-track">
+            <div class="breakdown-bar-fill"
+                 [style.width.%]="scoreResult.breakdown[cat]"
+                 [style.background]="categoryMeta[cat]?.color ?? '#06b6d4'">
+            </div>
+          </div>
+          <span class="breakdown-pct">{{ scoreResult.breakdown[cat] }}%</span>
+        </div>
+      </div>
+    </div>
+
+    <button class="proceed-btn" (click)="proceedToResult()">
+      <span>View Full Health Report</span>
+      <span class="btn-arrow">→</span>
     </button>
 
   </div>
-
 </div>
